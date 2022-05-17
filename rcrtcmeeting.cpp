@@ -57,19 +57,34 @@ bool RCRTCMeeting::SetDefaultVideoConfig() {
 }
 
 // 加入指定房间
-bool RCRTCMeeting::EnterRoom(){
-    int32_t ret =-1;
+bool RCRTCMeeting::EnterRoom(rcrtc::RCRTCEngine* engine, const std::string& roomid,
+                             const rcrtc::RCRTCRole& userRole, const rcrtc::RCRTCJoinType& joinType,
+                             const rcrtc::RCRTCMediaType& mediaType) {
+    int32_t err_code = -1;
+    if (engine && !roomid.empty()) {
+        rcrtc_engine_ = engine;
+        rtc_roomid_ = roomid;
+    } else {
+        emit sigSendSdkResult(QString(CUtils::formatSdkResult(-1, "invalid parameters to rtcroom dialog").c_str()));
+        return false;
+    }
+
     rcrtc::RCRTCRoomSetup* setup = rcrtc::RCRTCRoomSetup::create();
     if(nullptr == setup){
-        ret = rcrtc_engine_->joinRoom(rtc_roomid_);
+        emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "RCRTCRoomSetup::create failed.").c_str()));
+        err_code = rcrtc_engine_->joinRoom(rtc_roomid_);
     } else {
-        setup->setRole(rcrtc::RCRTCRole::MEETING_MEMBER);
-        setup->setJoinType(rcrtc::RCRTCJoinType::KICK_OTHER_DEVICE);
-        setup->setMediaType(rcrtc::RCRTCMediaType::AUDIO_VIDEO);
-        ret = rcrtc_engine_->joinRoom(rtc_roomid_,setup);
+        setup->setRole(userRole);
+        setup->setJoinType(joinType);
+        setup->setMediaType(mediaType);
+        user_role_ = userRole;
+        user_select_joinType_ = joinType;
+        user_select_mediaType_ = mediaType;
+        err_code = rcrtc_engine_->joinRoom(rtc_roomid_,setup);
         rcrtc::RCRTCRoomSetup::destroy(&setup);
     }
-    return ret == 0;
+    emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "joinRoom failed.").c_str()));
+    return err_code == 0;
 }
 
 void RCRTCMeeting::onLeavRoom() {

@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QButtonGroup>
 #include <sstream>
 
 #include "im/rcim.h"
@@ -26,6 +27,9 @@ public:
     ~MainWindow();
 
 public slots:
+    void onAudioCheckboxStateChanged(int);
+    void onVideoCheckboxStateChanged(int);
+
     void onEnterRoomButton();
     void onInitSDK();
     void onUninitSDK();
@@ -43,6 +47,7 @@ signals:
 
 private:
     Ui::MainWindow *ui;
+    QButtonGroup* radio_group_;
 
     HANDLE_IM_ENGINE handle_im_;
     rcrtc::RCRTCEngineSetup* engine_setup_;

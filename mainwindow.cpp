@@ -18,11 +18,24 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->pushButton_Enter, SIGNAL(clicked()), this, SLOT(onEnterRoomButton()));
     connect(ui->pushButton_InitSDK, SIGNAL(clicked()), this, SLOT(onInitSDK()));
     connect(ui->pushButton_UninitSDK, SIGNAL(clicked()), this, SLOT(onUninitSDK()));
+    connect(ui->checkBox_allowVideo, &QCheckBox::stateChanged, this, &MainWindow::onVideoCheckboxStateChanged);
+    connect(ui->checkBox_allowAudio, &QCheckBox::stateChanged, this, &MainWindow::onAudioCheckboxStateChanged);
     connect(this, &MainWindow::logToPlainText, this, &MainWindow::onLogToPlainText);
 
     ui->lineEdit_Navigation->setText("nav.cn.ronghub.com");  // 信令服务器地址
     ui->lineEdit_Navigation->setReadOnly(true);
-    ui->radioButton_Meeting->setChecked(true);
+    // role
+    radio_group_ = new QButtonGroup();
+    radio_group_->setExclusive(true);
+    radio_group_->addButton(ui->radioButton_MeetingMember);
+    radio_group_->addButton(ui->radioButton_LiveBroadCaster);
+    radio_group_->addButton(ui->radioButton_LiveAudience);
+    ui->radioButton_MeetingMember->setChecked(true);
+
+    ui->checkBox_kickOthers->setChecked(true);
+    ui->checkBox_allowVideo->setChecked(true);
+    ui->checkBox_allowAudio->setChecked(true);
+
     ui->pushButton_UninitSDK->setEnabled(false);
     ui->pushButton_Enter->setEnabled(false);
     ui->plainTextEdit->setReadOnly(true);
@@ -53,6 +66,7 @@ MainWindow::~MainWindow()
         rcim_uninit(handle_im_);
         handle_im_ = nullptr;
     }
+    delete radio_group_;
     delete ui;
 }
 
@@ -67,6 +81,24 @@ void MainWindow::onLogToPlainText(const QString& line)
 void MainWindow::onRecvSdkResultLog(const QString& line) {
     std::cout << "LOGTEXT11 >>> " << line.toStdString() << std::endl;
     emit logToPlainText(line);
+}
+
+void MainWindow::onAudioCheckboxStateChanged(int state) {
+    if (state == Qt::Unchecked && !ui->checkBox_allowVideo->isChecked()) {
+        ui->pushButton_Enter->setEnabled(false);
+    }
+    if (!ui->pushButton_InitSDK->isEnabled() && (ui->checkBox_allowAudio->isChecked() || ui->checkBox_allowVideo->isChecked())) {
+        ui->pushButton_Enter->setEnabled(true);
+    }
+}
+
+void MainWindow::onVideoCheckboxStateChanged(int state) {
+    if (state == Qt::Unchecked && !ui->checkBox_allowAudio->isChecked()) {
+        ui->pushButton_Enter->setEnabled(false);
+    }
+    if (!ui->pushButton_InitSDK->isEnabled() && (ui->checkBox_allowAudio->isChecked() || ui->checkBox_allowVideo->isChecked())) {
+        ui->pushButton_Enter->setEnabled(true);
+    }
 }
 
 void MainWindow::onEnterRoomButton()
@@ -91,17 +123,40 @@ void MainWindow::onEnterRoomButton()
         connect(this, &MainWindow::remoteUnpublished, rtc_dialog_, &RCRTCMeeting::onRemoteUnpublished);
 
         // invoke rtc window
-        RCRTCMeeting::ERTCRoomType roomType = RCRTCMeeting::ERTCRoomMeet;
-        if (ui->radioButton_Live->isChecked()) {
-            roomType = RCRTCMeeting::ERTCRoomLive;
+        rcrtc::RCRTCRole role;
+        rcrtc::RCRTCJoinType join_type;
+        rcrtc::RCRTCMediaType media_type;
+        if (ui->radioButton_MeetingMember->isChecked()) {
+            role = rcrtc::RCRTCRole::MEETING_MEMBER;
+        } else if (ui->radioButton_LiveBroadCaster->isChecked()) {
+            role = rcrtc::RCRTCRole::LIVE_BROADCASTER;
+        } else {
+            role = rcrtc::RCRTCRole::LIVE_AUDIENCE;
         }
+
+        if (ui->checkBox_kickOthers->isChecked()) {
+            join_type = rcrtc::RCRTCJoinType::KICK_OTHER_DEVICE;
+        } else {
+            join_type = rcrtc::RCRTCJoinType::REFUSE_CURRENT_DEVICE;
+        }
+
+        if (ui->checkBox_allowAudio->isChecked() && ui->checkBox_allowVideo->isChecked()) {
+            media_type = rcrtc::RCRTCMediaType::AUDIO_VIDEO;
+        } else if (ui->checkBox_allowAudio->isChecked() && !ui->checkBox_allowVideo->isChecked()) {
+            media_type = rcrtc::RCRTCMediaType::AUDIO;
+        } else if (!ui->checkBox_allowAudio->isChecked() && ui->checkBox_allowVideo->isChecked()) {
+            media_type = rcrtc::RCRTCMediaType::VIDEO;
+        } else {
+            // todo log
+            return;
+        }
+
         if (rtc_dialog_) {
-            rtc_dialog_->SetRTCEngine(rcrtc_engine_, roomid);
-            rtc_dialog_->EnterRoom();
+            // rtc_dialog_->SetRTCEngine(rcrtc_engine_, roomid);
+            rtc_dialog_->EnterRoom(rcrtc_engine_, roomid, role, join_type, media_type);
             rtc_dialog_->show();
         }
     }
-
 }
 
 void MainWindow::onInitSDK()

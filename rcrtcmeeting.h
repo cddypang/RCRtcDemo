@@ -17,27 +17,15 @@ class RCRTCMeeting : public QWidget
     Q_OBJECT
 
 public:
-    enum ERTCRoomType {
-        ERTCRoomMeet = 1,
-        ERTCRoomLive = 2
-    };
-
     explicit RCRTCMeeting(QWidget *parent = nullptr);
     ~RCRTCMeeting();
 
-    inline void SetRTCEngine(rcrtc::RCRTCEngine* engine,
-                             const std::string& roomid) {
-        if (engine && !roomid.empty()) {
-            rcrtc_engine_ = engine;
-            rtc_roomid_ = roomid;
-        } else {
-            emit sigSendSdkResult(QString(CUtils::formatSdkResult(-1, "invalid parameters to rtcroom dialog").c_str()));
-        }
-    }
     // 根据实际情况设置视频参数，推荐根据分辨率获取码率范围
     bool SetDefaultVideoConfig();
 
-    bool EnterRoom();
+    bool EnterRoom(rcrtc::RCRTCEngine* engine, const std::string& roomid,
+                   const rcrtc::RCRTCRole& userRole, const rcrtc::RCRTCJoinType& joinType,
+                   const rcrtc::RCRTCMediaType& mediaType);
     bool PublishedStream();
 
 
@@ -60,6 +48,9 @@ private:
     rcrtc::RCRTCEngine* rcrtc_engine_;
     std::string user_token_;
     std::string rtc_roomid_;
+    rcrtc::RCRTCRole user_role_;
+    rcrtc::RCRTCJoinType user_select_joinType_;
+    rcrtc::RCRTCMediaType user_select_mediaType_;
 
     std::map<rcrtc::RCRTCStreamKey, rcrtc::RCRTCMediaType> remote_streams_;
     std::mutex mtx_remote_streams_;
