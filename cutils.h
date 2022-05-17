@@ -9,10 +9,7 @@
 class CUtils
 {
 public:
-    static void showResult(const int32_t code, const std::string& msg = "");
-
-    // context: user_token
-    static void rcim_connection_callback_impl(HANDLE context, rc_connection_status code);
+    static std::string formatSdkResult(const int32_t code, const std::string& msg = "", const std::string& head = "RTC Result");
 
     static std::string rtcMediaTypeName(enum rcrtc::RCRTCMediaType type) {
         switch (type) {

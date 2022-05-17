@@ -3,6 +3,7 @@
 #include <QMessageBox>
 #include <QDir>
 #include "cutils.h"
+#include <iostream>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -14,15 +15,18 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    connect(ui->pushButton_Enter, SIGNAL(clicked()), this, SLOT(onEnterButton()));
+    connect(ui->pushButton_Enter, SIGNAL(clicked()), this, SLOT(onEnterRoomButton()));
     connect(ui->pushButton_InitSDK, SIGNAL(clicked()), this, SLOT(onInitSDK()));
     connect(ui->pushButton_UninitSDK, SIGNAL(clicked()), this, SLOT(onUninitSDK()));
+    connect(this, &MainWindow::logToPlainText, this, &MainWindow::onLogToPlainText);
 
     ui->lineEdit_Navigation->setText("nav.cn.ronghub.com");  // 信令服务器地址
     ui->lineEdit_Navigation->setReadOnly(true);
     ui->radioButton_Meeting->setChecked(true);
     ui->pushButton_UninitSDK->setEnabled(false);
     ui->pushButton_Enter->setEnabled(false);
+    ui->plainTextEdit->setReadOnly(true);
+    ui->plainTextEdit->setLineWrapMode(QPlainTextEdit::WidgetWidth);
 }
 
 MainWindow::~MainWindow()
@@ -45,7 +49,20 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::onEnterButton()
+void MainWindow::onLogToPlainText(const QString& line)
+{
+    // todo mutex
+    std::cout << "LOGTEXT22 >>> " << line.toStdString() << std::endl;
+    ui->plainTextEdit->appendPlainText(line + "\n");
+    emit ui->plainTextEdit->textChanged();
+}
+
+void MainWindow::onRecvSdkResultLog(const QString& line) {
+    std::cout << "LOGTEXT11 >>> " << line.toStdString() << std::endl;
+    emit logToPlainText(line);
+}
+
+void MainWindow::onEnterRoomButton()
 {
     std::string roomid = ui->lineEdit_RoomID->text().toStdString();
     std::string username = ui->lineEdit_UserName->text().toStdString();
@@ -56,6 +73,14 @@ void MainWindow::onEnterButton()
     }
     else
     {
+        rtc_dialog_ = new RCRTCMeeting();
+        if (!rtc_dialog_)
+        {
+            std::cout << "new rcrtc_listener_impl_ failed" << std::endl;
+            return;
+        }
+        connect(rtc_dialog_, &RCRTCMeeting::sigSendSdkResult, this, &MainWindow::onRecvSdkResultLog);
+
         // invoke rtc window
         RCRTCMeeting::ERTCRoomType roomType = RCRTCMeeting::ERTCRoomMeet;
         if (ui->radioButton_Live->isChecked()) {
@@ -65,7 +90,6 @@ void MainWindow::onEnterButton()
             rtc_dialog_->SetRTCEngine(rcrtc_engine_, roomid);
             rtc_dialog_->EnterRoom();
             rtc_dialog_->show();
-            // this->hide();
         }
     }
 
@@ -89,7 +113,7 @@ void MainWindow::onInitSDK()
         int32_t error_code = -1;
         handle_im_ = rcim_init(appkey.c_str(), navigation.c_str(), "./", &error_code);
            if(nullptr == handle_im_){
-               CUtils::showResult(error_code);
+               emit logToPlainText(QString(CUtils::formatSdkResult(error_code).c_str()));
                return;
            }
            QDir dir;
@@ -112,38 +136,30 @@ void MainWindow::onInitSDK()
                }
                rcrtc_engine_ = rcrtc::RCRTCEngine::create(handle_im_, engine_setup_);
                if (nullptr == rcrtc_engine_) {
-                   CUtils::showResult(-1, "RTCEngine init failed.");
+                   emit logToPlainText(QString(CUtils::formatSdkResult(-1, "RTCEngine init failed.").c_str()));
                    return;
                }
 
-               rtc_dialog_ = new RCRTCMeeting();
-               if (!rtc_dialog_)
-               {
-                   std::cout << "new rcrtc_listener_impl_ failed" << std::endl;
-                   return;
-               }
-
-               //rcrtc_engine_->setListener(rtc_dialog_);
-               // CUtils::showResult(0, "RTCEngine init OK.");
-               // return;
+               rcrtc_engine_->setListener(this);
+               emit logToPlainText(QString(CUtils::formatSdkResult(0, "RTCEngine init OK.").c_str()));
 
                // connect im
-               error_code = rcim_set_connection_callback(handle_im_, CUtils::rcim_connection_callback_impl, user_token_.data());
+               error_code = rcim_set_connection_callback(handle_im_, rcim_connection_callback_impl, this);
                if(0 == error_code) {
                       error_code = rcim_connect(handle_im_, user_token_.c_str());
                       if (0 != error_code) {
-                          CUtils::showResult(error_code, "rcim_connect error");
+                          emit logToPlainText(QString(CUtils::formatSdkResult(error_code, "rcim_connect error").c_str()));
                           return;
                       }
                       ui->pushButton_InitSDK->setEnabled(false);
                       ui->pushButton_UninitSDK->setEnabled(true);
                       ui->pushButton_Enter->setEnabled(true);
                } else {
-                   CUtils::showResult(error_code, "rcim_set_connection_callback error");
+                   emit logToPlainText(QString(CUtils::formatSdkResult(error_code, "rcim_set_connection_callback error").c_str()));
                }
 
            } else {
-               CUtils::showResult(-1, "RCRTCEngineSetup::create() failed.");
+               emit logToPlainText(QString(CUtils::formatSdkResult(-1, "RCRTCEngineSetup::create() failed.").c_str()));
                return;
            }
     }
@@ -152,7 +168,7 @@ void MainWindow::onInitSDK()
 void MainWindow::onUninitSDK() {
     int32_t err_code = rcim_disconnect(handle_im_);
     if (0 != err_code) {
-        CUtils::showResult(err_code, "rcim_disconnect error");
+        emit logToPlainText(QString(CUtils::formatSdkResult(err_code, "rcim_disconnect error").c_str()));
     }
     if (rtc_dialog_)
     {

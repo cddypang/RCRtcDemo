@@ -25,7 +25,7 @@ void rtc_video_render::attachVideoRender(rcrtc::RCRTCEngine* engine) {
         rtc_view->setFitType(rcrtc::RCRTCViewFitType::FIT);
         int32_t error_code = engine->setLocalView(rtc_view);
         if (error_code != 0) {
-          CUtils::showResult(error_code, "set local view failed.\n");
+          emit sigSendSdkResult(QString(CUtils::formatSdkResult(error_code, "set local view failed.\n").c_str()));
         }
     }
 }

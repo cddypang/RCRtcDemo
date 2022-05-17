@@ -26,6 +26,10 @@ RCRTCMeeting::~RCRTCMeeting()
     delete ui;
 }
 
+void RCRTCMeeting::onRecvSdkResultLog(const QString& line) {
+    emit sigSendSdkResult(line);
+}
+
 // 根据实际情况设置视频参数，推荐根据分辨率获取码率范围
 bool RCRTCMeeting::SetDefaultVideoConfig() {
     if(nullptr == rcrtc_engine_){
@@ -42,7 +46,7 @@ bool RCRTCMeeting::SetDefaultVideoConfig() {
     int32_t err_code = rcrtc_engine_->setVideoConfig(config);
     rcrtc::RCRTCVideoConfig::destroy(&config);
     if(err_code !=0) {
-        CUtils::showResult(err_code, "set video config failed.");
+        emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "set video config failed.").c_str()));
     }
     return 0 == err_code;
 }
@@ -76,13 +80,15 @@ void RCRTCMeeting::onPublishLocalStreamButton() {
 
             err_code = rcrtc_engine_->publish(rcrtc::RCRTCMediaType::AUDIO_VIDEO);
             if (err_code != 0) {
-              CUtils::showResult(err_code, "local call publish.\n");
+              emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "local call publish.\n").c_str()));
               return;
             }
 
             // ui->pushButton_PubStream->setWindowTitle("取消发布本地视频流");
 
             rtc_video_render* render = new rtc_video_render(this);
+            connect(render, &rtc_video_render::sigSendSdkResult, this, &RCRTCMeeting::onRecvSdkResultLog);
+
             // render->setWindowTitle("223334");
             render->setMinimumSize(400,300);
             render->setMaximumSize(400,300);
@@ -92,16 +98,6 @@ void RCRTCMeeting::onPublishLocalStreamButton() {
         }
     }
 }
-
-void RCRTCMeeting::onRoomJoined(int32_t code, const std::string& errMsg)
-    {
-//        QMessageBox::information(this, "Info", QString("welcome, roomid is: %1").arg(rtc_roomid_.c_str()));
-//        this->setWindowTitle(QString("welcome, roomid is: %1").arg(rtc_roomid_.c_str()));
-        CUtils::showResult(code, "onRoomJoined errMsg: " + errMsg);
-        if (0 == code) {
-            ui->pushButton_PubStream->setEnabled(true);
-        }
-    }
 
 
 // 创建窗口，并设置本地视频窗口

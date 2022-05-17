@@ -32,6 +32,7 @@ ENDIF () # (CMAKE_SYSTEM_NAME MATCHES "Windows")
 set(PROJECT_SOURCES
         main.cpp
         mainwindow.cpp
+        mw_listener_impl.cpp
         mainwindow.h
         mainwindow.ui
         rcrtcmeeting.h
