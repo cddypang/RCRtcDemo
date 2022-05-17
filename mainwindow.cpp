@@ -27,6 +27,13 @@ MainWindow::MainWindow(QWidget *parent)
     ui->pushButton_Enter->setEnabled(false);
     ui->plainTextEdit->setReadOnly(true);
     ui->plainTextEdit->setLineWrapMode(QPlainTextEdit::WidgetWidth);
+
+    //todo debug
+    ui->lineEdit_AppKey->setText("x18ywvqfxyg1c");
+    //{"code":200,"userId":"host-qt-app","token":"Xab4I8wRR+q4jOxnQrCGXmXUKtIzjgOpeZpJSxiKKcEoqEfFYn7evw==@5ysv.cn.rongnav.com;5ysv.cn.rongcfg.com"}
+    ui->lineEdit_Token->setText("Xab4I8wRR+q4jOxnQrCGXmXUKtIzjgOpeZpJSxiKKcEoqEfFYn7evw==@5ysv.cn.rongnav.com;5ysv.cn.rongcfg.com");
+    ui->lineEdit_RoomID->setText("2233");
+    ui->lineEdit_UserName->setText("debug");
 }
 
 MainWindow::~MainWindow()
@@ -51,7 +58,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::onLogToPlainText(const QString& line)
 {
-    // todo mutex
+    // todo mutex, 错误日志变红
     std::cout << "LOGTEXT22 >>> " << line.toStdString() << std::endl;
     ui->plainTextEdit->appendPlainText(line + "\n");
     emit ui->plainTextEdit->textChanged();
@@ -80,6 +87,8 @@ void MainWindow::onEnterRoomButton()
             return;
         }
         connect(rtc_dialog_, &RCRTCMeeting::sigSendSdkResult, this, &MainWindow::onRecvSdkResultLog);
+        connect(this, &MainWindow::remotePublished, rtc_dialog_, &RCRTCMeeting::onRemotePublished);
+        connect(this, &MainWindow::remoteUnpublished, rtc_dialog_, &RCRTCMeeting::onRemoteUnpublished);
 
         // invoke rtc window
         RCRTCMeeting::ERTCRoomType roomType = RCRTCMeeting::ERTCRoomMeet;

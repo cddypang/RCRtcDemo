@@ -2,6 +2,8 @@
 #define RCRTCMEETING_H
 
 #include <QWidget>
+#include <map>
+#include <mutex>
 
 #include "rcrtc_engine.h"
 #include "cutils.h"
@@ -40,8 +42,14 @@ public:
 
 
 public slots:
+    void onLeavRoom();
     void onRecvSdkResultLog(const QString& line);
     void onPublishLocalStreamButton();
+    void onSubRemoteStreamButton();
+    void onPubDesktopButton();
+
+    void onRemotePublished(const QString& userId, qint32 mediaType);
+    void onRemoteUnpublished(const QString& userId, qint32 mediaType);
 
 signals:
     void sigSendSdkResult(const QString&);
@@ -53,6 +61,8 @@ private:
     std::string user_token_;
     std::string rtc_roomid_;
 
+    std::map<rcrtc::RCRTCStreamKey, rcrtc::RCRTCMediaType> remote_streams_;
+    std::mutex mtx_remote_streams_;
 
 };
 

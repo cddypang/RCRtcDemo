@@ -18,7 +18,11 @@ public:
     explicit rtc_video_render(QWidget *parent = nullptr);
     ~rtc_video_render();
 
-    void attachVideoRender(rcrtc::RCRTCEngine* engine);
+    // userId emplty is local
+    void attachVideoRender(rcrtc::RCRTCEngine* engine, const std::string& userId = "");
+
+    // userId emplty is local
+    void attachCustomVideoRender(rcrtc::RCRTCEngine* engine, const std::string& tag, const std::string& userId = "");
 
 signals:
     void sigSendSdkResult(const QString&);

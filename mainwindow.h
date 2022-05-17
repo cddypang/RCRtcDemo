@@ -36,6 +36,11 @@ public slots:
 signals:
     void logToPlainText(const QString& line);
 
+    void remoteUserJoined(const QString& userId);
+    void remoteUserLeft(const QString& userId);
+    void remotePublished(const QString& userId, qint32 mediaType);
+    void remoteUnpublished(const QString& userId, qint32 mediaType);
+
 private:
     Ui::MainWindow *ui;
 
@@ -91,30 +96,21 @@ private:  // im rtc callback impl
      *
      * @param userId 用户 id
      */
-    virtual void onUserJoined(const std::string& userId)
-    {
-        emit logToPlainText(QString(CUtils::formatSdkResult(0, "onUserJoined userId: " + userId).c_str()));
-    }
+    virtual void onUserJoined(const std::string& userId);
 
     /**
      * 远端用户因离线离开房间操作回调
      *
      * @param userId 用户 id
      */
-    virtual void onUserOffline(const std::string& userId)
-    {
-        emit logToPlainText(QString(CUtils::formatSdkResult(0, "onUserOffline userId: " + userId).c_str()));
-    }
+    virtual void onUserOffline(const std::string& userId);
 
     /**
      * 远端用户离开房间操作回调
      *
      * @param userId 用户 id
      */
-    virtual void onUserLeft(const std::string& userId)
-    {
-        emit logToPlainText(QString(CUtils::formatSdkResult(0, "onUserLeft userId: " + userId).c_str()));
-    }
+    virtual void onUserLeft(const std::string& userId);
 
     /**
      * 远端用户发布资源操作回调
@@ -123,11 +119,7 @@ private:  // im rtc callback impl
      * @param type   资源类型
      */
     virtual void onRemotePublished(const std::string& userId,
-                                   rcrtc::RCRTCMediaType type)
-    {
-        emit logToPlainText(QString(CUtils::formatSdkResult(0, "onRemotePublished userId: " + userId \
-                                                            + ", mediaType: " + CUtils::rtcMediaTypeName(type)).c_str()));
-    }
+                                   rcrtc::RCRTCMediaType type);
 
     /**
      * 远端用户取消发布资源操作回调
@@ -136,11 +128,7 @@ private:  // im rtc callback impl
      * @param type   资源类型
      */
     virtual void onRemoteUnpublished(const std::string& userId,
-                                     rcrtc::RCRTCMediaType type)
-    {
-        emit logToPlainText(QString(CUtils::formatSdkResult(0, "onRemoteUnpublished userId: " + userId \
-                                                            + ", mediaType: " + CUtils::rtcMediaTypeName(type)).c_str()));
-    }
+                                     rcrtc::RCRTCMediaType type);
 
     /**
      * 远端用户资源状态操作回调
