@@ -45,6 +45,14 @@ signals:
     void remotePublished(const QString& userId, qint32 mediaType);
     void remoteUnpublished(const QString& userId, qint32 mediaType);
 
+    void remoteCustomStreamPublished(const QString& userId,
+                                     const QString& tag,
+                                     qint32 mediaType);
+
+    void remoteCustomStreamUnpublished(const QString& userId,
+                                       const QString& tag,
+                                       qint32 mediaType);
+
 private:
     Ui::MainWindow *ui;
     QButtonGroup* radio_group_;
@@ -199,12 +207,7 @@ private:  // im rtc callback impl
      */
     virtual void onPublished(rcrtc::RCRTCMediaType type,
                              int32_t code,
-                             const std::string& errMsg)
-    {
-        QString msg = QString("local publish %1, errcode: %2, errmsg: %3")
-                .arg(CUtils::rtcMediaTypeName(type).c_str()).arg(code).arg(errMsg.c_str());
-        emit logToPlainText(QString(CUtils::formatSdkResult(code, msg.toStdString()).c_str()));
-    }
+                             const std::string& errMsg);
 
     /**
      * 本地用户取消发布资源回调
@@ -214,12 +217,7 @@ private:  // im rtc callback impl
      */
     virtual void onUnpublished(rcrtc::RCRTCMediaType type,
                                int32_t code,
-                               const std::string& errMsg)
-    {
-        QString msg = QString("local unPublish %2, errcode: %3, errmsg: %4")
-                .arg(CUtils::rtcMediaTypeName(type).c_str()).arg(code).arg(errMsg.c_str());
-        emit logToPlainText(QString(CUtils::formatSdkResult(code, msg.toStdString()).c_str()));
-    }
+                               const std::string& errMsg);
 
     /**
      * 订阅远端用户发布的资源操作回调
@@ -231,10 +229,7 @@ private:  // im rtc callback impl
     virtual void onSubscribed(const std::string& userId,
                               rcrtc::RCRTCMediaType type,
                               int32_t code,
-                              const std::string& errMsg)
-    {
-        // todo
-    }
+                              const std::string& errMsg);
 
     /**
      * 取消订阅远端用户发布的资源操作回调
@@ -246,10 +241,7 @@ private:  // im rtc callback impl
     virtual void onUnsubscribed(const std::string& userId,
                                 rcrtc::RCRTCMediaType type,
                                 int32_t code,
-                                const std::string& errMsg)
-    {
-        // todo
-    }
+                                const std::string& errMsg);
 
     /**
      * 订阅合流资源操作回调
@@ -478,10 +470,8 @@ private:  // im rtc callback impl
     virtual void onCustomStreamPublished(const std::string& tag,
                                          rcrtc::RCRTCMediaType type,
                                          int32_t code,
-                                         const std::string& errMsg)
-    {
-        // todo
-    }
+                                         const std::string& errMsg);
+
     /**
      * @brief 取消发布自定义流结果通知
      *
@@ -495,10 +485,7 @@ private:  // im rtc callback impl
     virtual void onCustomStreamUnpublished(const std::string& tag,
                                            rcrtc::RCRTCMediaType type,
                                            int32_t code,
-                                           const std::string& errMsg)
-    {
-        // todo
-    }
+                                           const std::string& errMsg);
     /**
      * @brief 自定义流发布结束通知
      *
@@ -508,10 +495,7 @@ private:  // im rtc callback impl
      * @return void
      */
     virtual void onCustomStreamPublishFinished(const std::string& tag,
-                                               rcrtc::RCRTCMediaType type)
-    {
-        // todo
-    }
+                                               rcrtc::RCRTCMediaType type);
     /**
      * @brief 批量发布自定义流结果通知
      *
@@ -523,10 +507,7 @@ private:  // im rtc callback impl
      */
     virtual void onCustomStreamPublished(const std::list<std::string>& tags,
                                          int32_t code,
-                                         const std::string& errMsg)
-    {
-        // todo
-    }
+                                         const std::string& errMsg);
     /**
      * @brief 批量取消发布自定义流结果通知
      *
@@ -538,10 +519,7 @@ private:  // im rtc callback impl
      */
     virtual void onCustomStreamUnpublished(const std::list<std::string>& tags,
                                            int32_t code,
-                                           const std::string& errMsg)
-    {
-        // todo
-    }
+                                           const std::string& errMsg);
     /**
      * @brief 自定义流发布结束通知
      *
@@ -550,10 +528,7 @@ private:  // im rtc callback impl
      * @return void
      */
     virtual void onCustomStreamPublishFinished(
-        const std::list<std::string>& tags)
-    {
-        // todo
-    }
+        const std::list<std::string>& tags);
     /**
      * @brief 远端用户发布自定义流通知
      *
@@ -565,10 +540,7 @@ private:  // im rtc callback impl
      */
     virtual void onRemoteCustomStreamPublished(const std::string& userId,
                                                const std::string& tag,
-                                               rcrtc::RCRTCMediaType type)
-    {
-        // todo
-    }
+                                               rcrtc::RCRTCMediaType type);
     /**
      * @brief 远端用户取消发布自定义流通知
      *
@@ -580,10 +552,7 @@ private:  // im rtc callback impl
      */
     virtual void onRemoteCustomStreamUnpublished(const std::string& userId,
                                                  const std::string& tag,
-                                                 rcrtc::RCRTCMediaType type)
-    {
-        // todo
-    }
+                                                 rcrtc::RCRTCMediaType type);
     /**
      * @brief 远端用户取消发布自定义流通知
      *
@@ -599,10 +568,7 @@ private:  // im rtc callback impl
     virtual void onRemoteCustomStreamStateChanged(const std::string& userId,
                                                   const std::string& tag,
                                                   rcrtc::RCRTCMediaType type,
-                                                  bool disabled)
-    {
-        // todo
-    }
+                                                  bool disabled);
     /**
      * @brief 解码远端自定义视频流第一帧数据通知
      *
@@ -614,10 +580,7 @@ private:  // im rtc callback impl
      */
     virtual void onRemoteCustomStreamFirstFrame(const std::string& userId,
                                                 const std::string& tag,
-                                                rcrtc::RCRTCMediaType type)
-    {
-        // todo
-    }
+                                                rcrtc::RCRTCMediaType type);
     /**
      * @brief 订阅指定自定义流结果通知
      *
@@ -633,10 +596,7 @@ private:  // im rtc callback impl
                                           const std::string& tag,
                                           rcrtc::RCRTCMediaType type,
                                           int32_t code,
-                                          const std::string& errMsg)
-    {
-        // todo
-    }
+                                          const std::string& errMsg);
     /**
      * @brief 取消订阅指定自定义流结果通知
      *
@@ -652,10 +612,7 @@ private:  // im rtc callback impl
                                             const std::string& tag,
                                             rcrtc::RCRTCMediaType type,
                                             int32_t code,
-                                            const std::string& errMsg)
-    {
-        // todo
-    }
+                                            const std::string& errMsg);
     /**
      * @brief 批量订阅指定自定义流结果通知
      *
@@ -669,10 +626,7 @@ private:  // im rtc callback impl
     virtual void onCustomStreamSubscribed(const std::string& userId,
                                           const std::list<std::string>& tags,
                                           int32_t code,
-                                          const std::string& errMsg)
-    {
-        // todo
-    }
+                                          const std::string& errMsg);
     /**
      * @brief 批量取消订阅指定自定义流结果通知
      *
@@ -686,10 +640,7 @@ private:  // im rtc callback impl
     virtual void onCustomStreamUnsubscribed(const std::string& userId,
                                             const std::list<std::string>& tags,
                                             int32_t code,
-                                            const std::string& errMsg)
-    {
-        // todo
-    }
+                                            const std::string& errMsg);
 
     /**
      * 切换角色的回调
@@ -700,10 +651,7 @@ private:  // im rtc callback impl
      */
     virtual void onLiveRoleSwitched(rcrtc::RCRTCRole curRole,
                                     int32_t code,
-                                    const std::string& errMsg)
-    {
-        // todo
-    }
+                                    const std::string& errMsg);
 
     /**
      * 远端用户切换角色的回调
@@ -714,10 +662,7 @@ private:  // im rtc callback impl
      */
     virtual void onRemoteLiveRoleSwitched(const std::string& roomId,
                                           const std::string& userId,
-                                          rcrtc::RCRTCRole role)
-    {
-        // todo
-    }
+                                          rcrtc::RCRTCRole role);
 
     /**
      * 获取用户加入的房间信息

@@ -51,6 +51,13 @@
       </widget>
      </item>
      <item>
+      <widget class="QPushButton" name="pushButton_SubCustomStream">
+       <property name="text">
+        <string>订阅自定义流</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="pushButton_SubMix">
        <property name="text">
         <string>订阅合流</string>

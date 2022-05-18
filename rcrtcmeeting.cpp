@@ -20,6 +20,7 @@ RCRTCMeeting::RCRTCMeeting(QWidget *parent) :
 
     connect(ui->pushButton_PubStream, SIGNAL(clicked()), this, SLOT(onPublishLocalStreamButton()));
     connect(ui->pushButton_SubRemote, &QPushButton::clicked, this, &RCRTCMeeting::onSubRemoteStreamButton);
+    connect(ui->pushButton_SubCustomStream, &QPushButton::clicked, this, &RCRTCMeeting::onSubRemoteCustomStreamButton);
     connect(ui->pushButton_PubDesktop, &QPushButton::clicked, this, &RCRTCMeeting::onPubDesktopButton);
     connect(ui->pushButton_SwitchRole, &QPushButton::clicked, this, &RCRTCMeeting::onSwitchRoleButton);
     connect(ui->pushButton_Quit, &QPushButton::clicked, this, &RCRTCMeeting::onLeavRoom);
@@ -123,8 +124,10 @@ void RCRTCMeeting::onPublishLocalStreamButton() {
     int32_t err_code = -1;
     if (rcrtc_engine_) {
         if (pub_flag) {
-            SetDefaultVideoConfig();
-            err_code = rcrtc_engine_->publish(rcrtc::RCRTCMediaType::AUDIO_VIDEO);
+            if (user_select_mediaType_ != rcrtc::RCRTCMediaType::AUDIO) {
+                SetDefaultVideoConfig();
+            }
+            err_code = rcrtc_engine_->publish(user_select_mediaType_);
             if (err_code != 0) {
                 pub_flag = false;
                 emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "local call publish.\n").c_str()));
@@ -133,16 +136,18 @@ void RCRTCMeeting::onPublishLocalStreamButton() {
 
             ui->pushButton_PubStream->setText("取消发布本地资源");
 
-            // todo
-            rtc_video_render* render = new rtc_video_render(this);
-            connect(render, &rtc_video_render::sigSendSdkResult, this, &RCRTCMeeting::onRecvSdkResultLog);
+            if (user_select_mediaType_ != rcrtc::RCRTCMediaType::AUDIO) {
+                // todo
+                rtc_video_render* render = new rtc_video_render(this);
+                connect(render, &rtc_video_render::sigSendSdkResult, this, &RCRTCMeeting::onRecvSdkResultLog);
 
-            // render->setWindowTitle("223334");
-            render->setFixedSize(400,300);
-            render->attachVideoRender(rcrtc_engine_);
-            ui->verticalLayout->addWidget(render);
+                // render->setWindowTitle("223334");
+                render->setFixedSize(400,300);
+                render->attachVideoRender(rcrtc_engine_);
+                ui->verticalLayout->addWidget(render);
+            }
         } else {
-            err_code = rcrtc_engine_->unpublish(rcrtc::RCRTCMediaType::AUDIO_VIDEO);
+            err_code = rcrtc_engine_->unpublish(user_select_mediaType_);
             emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "local call unpublish.\n").c_str()));
             if (err_code != 0) {
                 pub_flag = false;
@@ -228,6 +233,83 @@ void RCRTCMeeting::onRemoteUnpublished(const QString& userId, qint32 mediaType) 
     }
 }
 
+void RCRTCMeeting::onSubRemoteCustomStreamButton() {
+    if (!rcrtc_engine_) {
+        return;
+    }
+
+    // todo: cache sub mediatypes
+    std::map<rcrtc::RCRTCStreamKey, rcrtc::RCRTCMediaType> custom_streams;
+    mtx_remote_custom_streams_.lock();
+    custom_streams = remote_custom_streams_;
+    mtx_remote_custom_streams_.unlock();
+
+    int32_t err_code = -1;
+    for (auto it=custom_streams.begin(); it!=custom_streams.end(); ++it) {
+        if (it->second == rcrtc::RCRTCMediaType::VIDEO) {
+            // note: 要先创建窗口再订阅视频流，否则接口返回正确但无视频渲染输出 【开发文档未提及】
+            // todo render del?
+            rtc_video_render* render = new rtc_video_render(this);
+            connect(render, &rtc_video_render::sigSendSdkResult, this, &RCRTCMeeting::onRecvSdkResultLog);
+
+            // render->setWindowTitle("223334");
+            render->setFixedSize(400,300);
+            render->attachCustomVideoRender(rcrtc_engine_, it->first.tag, it->first.user_id);
+            ui->verticalLayout->addWidget(render);
+
+            err_code = rcrtc_engine_->subscribeCustomStream(it->first.user_id, it->first.tag, it->second);
+            emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "local call subscribeCustomStream video.\n").c_str()));
+        }
+        if (it->second == rcrtc::RCRTCMediaType::AUDIO) {
+            err_code = rcrtc_engine_->subscribeCustomStream(it->first.user_id, it->first.tag, it->second);
+            emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "local call subscribeCustomStream audio.\n").c_str()));
+        }
+    }
+
+    ui->pushButton_SubCustomStream->setEnabled(false);
+}
+
+void RCRTCMeeting::onRemoteCustomStreamPublished(const QString& userId,
+                                 const QString& tag,
+                                   qint32 mediaType) {
+    mtx_remote_custom_streams_.lock();
+    rcrtc::RCRTCStreamKey sk(userId.toStdString(), tag.toStdString());
+    auto it = remote_custom_streams_.find(sk);
+    if (it == remote_custom_streams_.end()) {
+        remote_custom_streams_.insert(std::pair<rcrtc::RCRTCStreamKey, rcrtc::RCRTCMediaType>(sk, (rcrtc::RCRTCMediaType)mediaType));
+    }
+    mtx_remote_custom_streams_.unlock();
+    // 有新资源发布使能订阅按钮
+    ui->pushButton_SubCustomStream->setEnabled(true);
+    emit sigSendSdkResult(QString(CUtils::formatSdkResult(0, "cache remote user custom stream pub meidainfo.\n").c_str()));
+}
+
+void RCRTCMeeting::onRemoteCustomStreamUnpublished(const QString& userId,
+                                   const QString& tag,
+                                     qint32 mediaType) {
+    bool unsub_flag = false;
+    mtx_remote_custom_streams_.lock();
+    rcrtc::RCRTCStreamKey sk(userId.toStdString(), tag.toStdString());
+    auto it = remote_custom_streams_.find(sk);
+    if (it != remote_custom_streams_.end()) {
+        remote_custom_streams_.erase(it);
+        unsub_flag = true;
+    }
+    mtx_remote_custom_streams_.unlock();
+
+    // 检测到远端取消发布后取消订阅
+    if (unsub_flag) {
+        int32_t err_code = rcrtc_engine_->unsubscribeCustomStream(userId.toStdString(), tag.toStdString(), (rcrtc::RCRTCMediaType)mediaType);
+        emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "local call unsubscribeCustomStream.\n").c_str()));
+
+        if ((rcrtc::RCRTCMediaType)mediaType == rcrtc::RCRTCMediaType::VIDEO) {
+            // todo del render
+            err_code = rcrtc_engine_->removeRemoteCustomStreamView(userId.toStdString(), tag.toStdString());
+            emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "local call removeRemoteCustomStreamView.\n").c_str()));
+        }
+    }
+}
+
 void RCRTCMeeting::onPubDesktopButton() {
     static bool pub_flag = false;
     if (!rcrtc_engine_) {
@@ -235,6 +317,7 @@ void RCRTCMeeting::onPubDesktopButton() {
     }
     pub_flag = !pub_flag;
 
+    //todo tag manage
     std::string stream_tag = "default monitor";
     int32_t err_code = -1;
     if (pub_flag) {
@@ -313,49 +396,3 @@ void RCRTCMeeting::onSwitchRoleButton() {
     }
     emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "local call switchLiveRole.\n").c_str()));
 }
-
-// 创建窗口，并设置本地视频窗口
-//rcrtc::IRCRTCView* local_view = nullptr;
-//void RCRTCMeeting::setLocalView() {
-//  HANDLE viewId = (HANDLE)ui->local_video_view->winId();//窗口
-//  local_view = rcrtc::IRCRTCView::create((HANDLE)viewId);
-//  if (engine_->setLocalView(local_view) != 0) {
-//    LOG("set local view failed.\n");
-//    return;
-//  }
-//}
-
-// 移除本地视频窗口，并释放窗口
-//void RCRTCMeeting::removeLocalView() {
-//  if (engine_->removeLocalView() != 0) {
-//    LOG("remove local view failed.\n");
-//    return;
-//  }
-//  rcrtc::IRCRTCView::destroy(&local_view);
-//}
-
-// 创建窗口，并设置远端视频窗口
-// 当要订阅远端视频之前可以调用该接口
-//rcrtc::IRCRTCView* remote_view = nullptr;
-//void RCRTCMeeting::setRemoteView() {
-//  HANDLE viewId = (HANDLE)ui->remote_video_view->winId();//窗口
-//  remove_view = rcrtc::IRCRTCView::create((HANDLE)viewId);
-//  std::string remote_user = "remote_user_1";
-//  if (engine_->setRemoteView(remote_user, remote_view) != 0) {
-//    LOG("set remote view failed.\n");
-//    return;
-//  }
-//}
-
-// 移除远端视频窗口，并释放窗口
-// 当取消订阅远端视频后可以调用该接口
-// 如果收到远端用户下线或远端用户停止发布视频流后，sdk 内部会自动移除远端视频窗口，
-// 此时您只需调用 destroy 释放之前创建的渲染资源即可
-//void RCRTCMeeting::removeRemoteView() {
-//  std::string remote_user = "remote_user_1";
-//  if (engine_->removeRemoteView(remote_user) != 0) {
-//    LOG("remove remote view failed.\n");
-//    return;
-//  }
-//  rcrtc::IRCRTCView::destroy(&remote_view);
-//}

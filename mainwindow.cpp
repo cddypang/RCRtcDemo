@@ -121,6 +121,8 @@ void MainWindow::onEnterRoomButton()
         connect(rtc_dialog_, &RCRTCMeeting::sigSendSdkResult, this, &MainWindow::onRecvSdkResultLog);
         connect(this, &MainWindow::remotePublished, rtc_dialog_, &RCRTCMeeting::onRemotePublished);
         connect(this, &MainWindow::remoteUnpublished, rtc_dialog_, &RCRTCMeeting::onRemoteUnpublished);
+        connect(this, &MainWindow::remoteCustomStreamPublished, rtc_dialog_, &RCRTCMeeting::onRemoteCustomStreamPublished);
+        connect(this, &MainWindow::remoteCustomStreamUnpublished, rtc_dialog_, &RCRTCMeeting::onRemoteCustomStreamUnpublished);
 
         // invoke rtc window
         rcrtc::RCRTCRole role;

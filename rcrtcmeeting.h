@@ -34,11 +34,20 @@ public slots:
     void onRecvSdkResultLog(const QString& line);
     void onPublishLocalStreamButton();
     void onSubRemoteStreamButton();
+    void onSubRemoteCustomStreamButton();
     void onPubDesktopButton();
     void onSwitchRoleButton();
 
     void onRemotePublished(const QString& userId, qint32 mediaType);
     void onRemoteUnpublished(const QString& userId, qint32 mediaType);
+
+    void onRemoteCustomStreamPublished(const QString& userId,
+                                     const QString& tag,
+                                     qint32 mediaType);
+
+    void onRemoteCustomStreamUnpublished(const QString& userId,
+                                       const QString& tag,
+                                       qint32 mediaType);
 
 signals:
     void sigSendSdkResult(const QString&);
@@ -56,6 +65,8 @@ private:
     std::map<rcrtc::RCRTCStreamKey, rcrtc::RCRTCMediaType> remote_streams_;
     std::mutex mtx_remote_streams_;
 
+    std::map<rcrtc::RCRTCStreamKey, rcrtc::RCRTCMediaType> remote_custom_streams_;
+    std::mutex mtx_remote_custom_streams_;
 };
 
 #endif // RCRTCMEETING_H
