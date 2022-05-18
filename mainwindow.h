@@ -36,6 +36,7 @@ public slots:
 
     void onRecvSdkResultLog(const QString& line);
     void onLogToPlainText(const QString& line);
+    void onLeaveRtcRoom();
 
 signals:
     void logToPlainText(const QString& line);

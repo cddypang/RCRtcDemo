@@ -95,6 +95,15 @@ void MainWindow::onVideoCheckboxStateChanged(int state) {
     }
 }
 
+void MainWindow::onLeaveRtcRoom() {
+    if (rtc_dialog_) {
+        rtc_dialog_->close();
+        delete rtc_dialog_;
+        rtc_dialog_ = nullptr;
+    }
+    emit logToPlainText(QString(CUtils::formatSdkResult(0, "MainWindow destroy rtc room dialog").c_str()));
+}
+
 void MainWindow::onEnterRoomButton()
 {
     std::string roomid = ui->lineEdit_RoomID->text().toStdString();
@@ -113,6 +122,7 @@ void MainWindow::onEnterRoomButton()
             return;
         }
         connect(rtc_dialog_, &RtcRoomDialog::sigSendSdkResult, this, &MainWindow::onRecvSdkResultLog);
+        connect(rtc_dialog_, &RtcRoomDialog::sigLeaveRtcRoom, this, &MainWindow::onLeaveRtcRoom);
         connect(this, &MainWindow::remotePublished, rtc_dialog_, &RtcRoomDialog::onRemotePublished);
         connect(this, &MainWindow::remoteUnpublished, rtc_dialog_, &RtcRoomDialog::onRemoteUnpublished);
         connect(this, &MainWindow::remoteCustomStreamPublished, rtc_dialog_, &RtcRoomDialog::onRemoteCustomStreamPublished);

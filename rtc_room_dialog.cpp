@@ -17,6 +17,9 @@ RtcRoomDialog::RtcRoomDialog(QWidget *parent) :
 {
     ui->setupUi(this);
     this->resize(800,600);
+    // 去掉用 &~ 显示用 |
+    //setWindowFlags(windowFlags() &~ Qt::WindowCloseButtonHint &~ Qt::WindowMinimizeButtonHint &~ Qt::WindowMaximizeButtonHint);
+    setWindowFlags(Qt::WindowTitleHint | Qt::CustomizeWindowHint);
 
     connect(ui->pushButton_PubStream, &QPushButton::clicked, this, &RtcRoomDialog::onPublishLocalStreamButton);
     connect(ui->pushButton_SubRemote, &QPushButton::clicked, this, &RtcRoomDialog::onSubRemoteStreamButton);
@@ -120,12 +123,15 @@ void RtcRoomDialog::onLeavRoom() {
     if (err_code != 0) {
         emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "RoomDialog call leaveRoom").c_str()));
     }
-    // todo send sig to mainwindow
+    emit sigLeaveRtcRoom();
 }
 
 void RtcRoomDialog::onPublishLocalStreamButton() {
     static bool pub_flag = false;
     pub_flag = !pub_flag;
+
+    // todo 先使用静态方式存储，便于取消发布时能够删除对应窗体
+    static RtcVideoRender* render_widget = nullptr;
 
     int32_t err_code = -1;
     if (rcrtc_engine_) {
@@ -143,14 +149,13 @@ void RtcRoomDialog::onPublishLocalStreamButton() {
             ui->pushButton_PubStream->setText("取消发布本地资源");
 
             if (user_select_mediaType_ != rcrtc::RCRTCMediaType::AUDIO) {
-                // todo
-                RtcVideoRender* render = new RtcVideoRender(this);
-                connect(render, &RtcVideoRender::sigSendSdkResult, this, &RtcRoomDialog::onRecvSdkResultLog);
+                render_widget = new RtcVideoRender(this);
+                connect(render_widget, &RtcVideoRender::sigSendSdkResult, this, &RtcRoomDialog::onRecvSdkResultLog);
 
                 // render->setWindowTitle("223334");
-                render->setFixedSize(400,300);
-                render->attachVideoRender(rcrtc_engine_);
-                ui->verticalLayout->addWidget(render);
+                render_widget->setFixedSize(400,300);
+                render_widget->attachVideoRender(rcrtc_engine_);
+                ui->verticalLayout->addWidget(render_widget);
             }
         } else {
             err_code = rcrtc_engine_->removeLocalView();
@@ -162,6 +167,9 @@ void RtcRoomDialog::onPublishLocalStreamButton() {
                 pub_flag = false;
             }
 
+            ui->verticalLayout->removeWidget(render_widget);
+            delete render_widget;
+            render_widget = nullptr;
             ui->pushButton_PubStream->setText("发布本地资源");
         }
     }
@@ -180,10 +188,10 @@ void RtcRoomDialog::onSubRemoteStreamButton() {
     mtx_remote_streams_.unlock();
 
     int32_t err_code = -1;
+    mtx_sub_render_widgets_.lock();
     for (auto it=streams.begin(); it!=streams.end(); ++it) {
         if (it->second == rcrtc::RCRTCMediaType::VIDEO) {
             // note: 要先创建窗口再订阅视频流，否则接口返回正确但无视频渲染输出 【开发文档未提及】
-            // todo render del?
             RtcVideoRender* render = new RtcVideoRender(this);
             connect(render, &RtcVideoRender::sigSendSdkResult, this, &RtcRoomDialog::onRecvSdkResultLog);
 
@@ -191,7 +199,7 @@ void RtcRoomDialog::onSubRemoteStreamButton() {
             render->setFixedSize(400,300);
             render->attachVideoRender(rcrtc_engine_, it->first.user_id);
             ui->verticalLayout->addWidget(render);
-
+            sub_render_widgets_.insert(std::pair<rcrtc::RCRTCStreamKey, RtcVideoRender*>(it->first, render));
             err_code = rcrtc_engine_->subscribe(it->first.user_id, it->second);
             emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "RoomDialog call subscribe rtc_video").c_str()));
         }
@@ -200,6 +208,7 @@ void RtcRoomDialog::onSubRemoteStreamButton() {
             emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "RoomDialog call subscribe rtc_audio").c_str()));
         }
     }
+    mtx_sub_render_widgets_.unlock();
 
     ui->pushButton_SubRemote->setEnabled(false);
 }
@@ -238,6 +247,14 @@ void RtcRoomDialog::onRemoteUnpublished(const QString& userId, qint32 mediaType)
             err_code = rcrtc_engine_->removeRemoteView(userId.toStdString());
             emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "RoomDialog call removeRemoteView").c_str()));
         }
+
+        mtx_sub_render_widgets_.lock();
+        auto it = sub_render_widgets_.find(sk);
+        if (it != sub_render_widgets_.end()) {
+            ui->verticalLayout->removeWidget(it->second);
+            delete it->second;
+        }
+        mtx_sub_render_widgets_.unlock();
     }
 }
 
@@ -253,10 +270,10 @@ void RtcRoomDialog::onSubRemoteCustomStreamButton() {
     mtx_remote_custom_streams_.unlock();
 
     int32_t err_code = -1;
+    mtx_sub_render_widgets_.lock();
     for (auto it=custom_streams.begin(); it!=custom_streams.end(); ++it) {
         if (it->second == rcrtc::RCRTCMediaType::VIDEO) {
             // note: 要先创建窗口再订阅视频流，否则接口返回正确但无视频渲染输出 【开发文档未提及】
-            // todo render del?
             RtcVideoRender* render = new RtcVideoRender(this);
             connect(render, &RtcVideoRender::sigSendSdkResult, this, &RtcRoomDialog::onRecvSdkResultLog);
 
@@ -264,6 +281,7 @@ void RtcRoomDialog::onSubRemoteCustomStreamButton() {
             render->setFixedSize(400,300);
             render->attachCustomVideoRender(rcrtc_engine_, it->first.tag, it->first.user_id);
             ui->verticalLayout->addWidget(render);
+            sub_render_widgets_.insert(std::pair<rcrtc::RCRTCStreamKey, RtcVideoRender*>(it->first, render));
 
             err_code = rcrtc_engine_->subscribeCustomStream(it->first.user_id, it->first.tag, it->second);
             emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "RoomDialog call subscribeCustomStream rtc_video").c_str()));
@@ -273,6 +291,7 @@ void RtcRoomDialog::onSubRemoteCustomStreamButton() {
             emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "RoomDialog call subscribeCustomStream rtc_audio").c_str()));
         }
     }
+    mtx_sub_render_widgets_.unlock();
 
     ui->pushButton_SubCustomStream->setEnabled(false);
 }
@@ -315,6 +334,13 @@ void RtcRoomDialog::onRemoteCustomStreamUnpublished(const QString& userId,
             err_code = rcrtc_engine_->removeRemoteCustomStreamView(userId.toStdString(), tag.toStdString());
             emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "RoomDialog call removeRemoteCustomStreamView").c_str()));
         }
+        mtx_sub_render_widgets_.lock();
+        auto it = sub_render_widgets_.find(sk);
+        if (it != sub_render_widgets_.end()) {
+            ui->verticalLayout->removeWidget(it->second);
+            delete it->second;
+        }
+        mtx_sub_render_widgets_.unlock();
     }
 }
 
@@ -324,6 +350,9 @@ void RtcRoomDialog::onPubDesktopButton() {
         return;
     }
     pub_flag = !pub_flag;
+
+    // todo 先使用静态方式存储，便于取消发布时能够删除对应窗体
+    static RtcVideoRender* render_widget = nullptr;
 
     //todo tag manage
     // note: tag 中不能包含空格
@@ -343,27 +372,16 @@ void RtcRoomDialog::onPubDesktopButton() {
             return;
         }
 
-//        rcrtc::RCRTCVideoConfig* video_config = rcrtc::RCRTCVideoConfig::create();
-//        int32_t maxBit;
-//        int32_t minBit;
-//        video_config->setResolution(rcrtc::RCRTCVideoResolution::RESOLUTION_720_960);
-//        video_config->setFps(rcrtc::RCRTCVideoFps::FPS_15);
-//        video_config->getMaxAndMinBitrate(&maxBit, &minBit);
-//        video_config->setMaxBitrate(maxBit);
-//        video_config->setMinBitrate(minBit);
-//        rcrtc_engine_->setCustomStreamVideoConfig(stream_tag, video_config);
-//        rcrtc::RCRTCVideoConfig::destroy(&video_config);
-
         err_code = rcrtc_engine_->publishCustomStream(stream_tag, rcrtc::RCRTCMediaType::VIDEO);
         emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "RoomDialog call publishCustomStream").c_str()));
 
         ui->pushButton_PubDesktop->setText("取消屏幕共享");
-        RtcVideoRender* render = new RtcVideoRender(this);
-        connect(render, &RtcVideoRender::sigSendSdkResult, this, &RtcRoomDialog::onRecvSdkResultLog);
+        render_widget = new RtcVideoRender(this);
+        connect(render_widget, &RtcVideoRender::sigSendSdkResult, this, &RtcRoomDialog::onRecvSdkResultLog);
         // render->setWindowTitle("223334");
-        render->setFixedSize(400,300);
-        render->attachCustomVideoRender(rcrtc_engine_, stream_tag);
-        ui->verticalLayout->addWidget(render);
+        render_widget->setFixedSize(400,300);
+        render_widget->attachCustomVideoRender(rcrtc_engine_, stream_tag);
+        ui->verticalLayout->addWidget(render_widget);
     } else {
         err_code = rcrtc_engine_->unpublishCustomStream(stream_tag, rcrtc::RCRTCMediaType::VIDEO);
         emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "RoomDialog call unpublishCustomStream").c_str()));
@@ -375,6 +393,9 @@ void RtcRoomDialog::onPubDesktopButton() {
         emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "RoomDialog call destroyCustomStream").c_str()));
         pub_flag = false;
         ui->pushButton_PubDesktop->setText("发布屏幕共享");
+        ui->verticalLayout->removeWidget(render_widget);
+        delete render_widget;
+        render_widget = nullptr;
     }
 }
 
@@ -425,6 +446,9 @@ void RtcRoomDialog::onSubLiveMixButton() {
     static bool sub_flag = false;
     sub_flag = !sub_flag;
 
+    // todo 先使用静态方式存储，便于取消发布时能够删除对应窗体
+    static RtcVideoRender* render_widget = nullptr;
+
     int32_t err_code = -1;
     if (rcrtc_engine_) {
         if (sub_flag) {
@@ -437,14 +461,13 @@ void RtcRoomDialog::onSubLiveMixButton() {
 
             ui->pushButton_PubStream->setText("取消订阅直播合流");
 
-            // todo
-            RtcVideoRender* render = new RtcVideoRender(this);
-            connect(render, &RtcVideoRender::sigSendSdkResult, this, &RtcRoomDialog::onRecvSdkResultLog);
+            render_widget = new RtcVideoRender(this);
+            connect(render_widget, &RtcVideoRender::sigSendSdkResult, this, &RtcRoomDialog::onRecvSdkResultLog);
 
             // render->setWindowTitle("223334");
-            render->setFixedSize(400,300);
-            render->attachLiveMixVideoRender(rcrtc_engine_);
-            ui->verticalLayout->addWidget(render);
+            render_widget->setFixedSize(400,300);
+            render_widget->attachLiveMixVideoRender(rcrtc_engine_);
+            ui->verticalLayout->addWidget(render_widget);
         } else {
             err_code = rcrtc_engine_->unsubscribeLiveMix(rcrtc::RCRTCMediaType::AUDIO_VIDEO);
             emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "RoomDialog call unsubscribeLiveMix video_audio").c_str()));
@@ -454,6 +477,9 @@ void RtcRoomDialog::onSubLiveMixButton() {
             err_code = rcrtc_engine_->removeLiveMixView();
             emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "RoomDialog call removeLiveMixView").c_str()));
             ui->pushButton_PubStream->setText("订阅直播合流");
+            ui->verticalLayout->removeWidget(render_widget);
+            delete render_widget;
+            render_widget = nullptr;
         }
     }
 }

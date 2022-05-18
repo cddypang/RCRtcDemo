@@ -8,6 +8,8 @@
 #include "rcrtc_engine.h"
 #include "cutils.h"
 
+class RtcVideoRender;
+
 namespace Ui {
 class RtcRoomDialog;
 }
@@ -53,6 +55,7 @@ public slots:
 
 signals:
     void sigSendSdkResult(const QString&);
+    void sigLeaveRtcRoom();
 
 private:
     Ui::RtcRoomDialog *ui;
@@ -69,6 +72,9 @@ private:
 
     std::map<rcrtc::RCRTCStreamKey, rcrtc::RCRTCMediaType> remote_custom_streams_;
     std::mutex mtx_remote_custom_streams_;
+
+    std::map<rcrtc::RCRTCStreamKey, RtcVideoRender*> sub_render_widgets_;
+    std::mutex mtx_sub_render_widgets_;
 };
 
 #endif // RCRTCMEETING_H
