@@ -52,3 +52,16 @@ void rtc_video_render::attachCustomVideoRender(rcrtc::RCRTCEngine* engine, const
         emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "set local|remote custom stream view failed.\n").c_str()));
     }
 }
+
+void rtc_video_render::attachLiveMixVideoRender(rcrtc::RCRTCEngine* engine) {
+    if (engine) {
+        rcrtc::IRCRTCView* rtc_view = nullptr;
+        HANDLE viewId = nullptr;
+        viewId = (HANDLE)ui->widget->winId();//窗口
+
+        rtc_view = rcrtc::IRCRTCView::create((HANDLE)viewId);
+        rtc_view->setFitType(rcrtc::RCRTCViewFitType::FIT);
+        int32_t err_code = engine->setLiveMixView(rtc_view);
+        emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "local call attachVideoRender.\n").c_str()));
+    }
+}

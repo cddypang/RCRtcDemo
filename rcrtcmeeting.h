@@ -36,6 +36,8 @@ public slots:
     void onSubRemoteStreamButton();
     void onSubRemoteCustomStreamButton();
     void onPubDesktopButton();
+    void onSubLiveMixButton();
+    void onSetLiveMixButton();
     void onSwitchRoleButton();
 
     void onRemotePublished(const QString& userId, qint32 mediaType);

@@ -24,6 +24,8 @@ public:
     // userId emplty is local
     void attachCustomVideoRender(rcrtc::RCRTCEngine* engine, const std::string& tag, const std::string& userId = "");
 
+    void attachLiveMixVideoRender(rcrtc::RCRTCEngine* engine);
+
 signals:
     void sigSendSdkResult(const QString&);
 

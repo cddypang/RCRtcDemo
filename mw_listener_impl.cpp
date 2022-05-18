@@ -173,7 +173,9 @@ void MainWindow::onCustomStreamPublished(const std::string& tag,
                                      int32_t code,
                                      const std::string& errMsg)
 {
-    // todo
+    QString msg = QString("onCustomStreamPublished tag: %1, %2, errmsg: %3")
+            .arg(tag.c_str(), CUtils::rtcMediaTypeName(type).c_str(), errMsg.c_str());
+    emit logToPlainText(QString(CUtils::formatSdkResult(code, msg.toStdString()).c_str()));
 }
 /**
  * @brief 取消发布自定义流结果通知
@@ -190,7 +192,9 @@ void MainWindow::onCustomStreamUnpublished(const std::string& tag,
                                        int32_t code,
                                        const std::string& errMsg)
 {
-    // todo
+    QString msg = QString("onCustomStreamUnpublished tag: %1, %2, errmsg: %3")
+            .arg(tag.c_str(), CUtils::rtcMediaTypeName(type).c_str(), errMsg.c_str());
+    emit logToPlainText(QString(CUtils::formatSdkResult(code, msg.toStdString()).c_str()));
 }
 /**
  * @brief 自定义流发布结束通知
@@ -203,7 +207,9 @@ void MainWindow::onCustomStreamUnpublished(const std::string& tag,
 void MainWindow::onCustomStreamPublishFinished(const std::string& tag,
                                            rcrtc::RCRTCMediaType type)
 {
-    // todo
+    QString msg = QString("onCustomStreamPublishFinished tag: %1, %2")
+            .arg(tag.c_str(), CUtils::rtcMediaTypeName(type).c_str());
+    emit logToPlainText(QString(CUtils::formatSdkResult(0, msg.toStdString()).c_str()));
 }
 /**
  * @brief 批量发布自定义流结果通知

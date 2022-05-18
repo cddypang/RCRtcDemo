@@ -23,15 +23,18 @@ RCRTCMeeting::RCRTCMeeting(QWidget *parent) :
     connect(ui->pushButton_SubCustomStream, &QPushButton::clicked, this, &RCRTCMeeting::onSubRemoteCustomStreamButton);
     connect(ui->pushButton_PubDesktop, &QPushButton::clicked, this, &RCRTCMeeting::onPubDesktopButton);
     connect(ui->pushButton_SwitchRole, &QPushButton::clicked, this, &RCRTCMeeting::onSwitchRoleButton);
+    connect(ui->pushButton_SubLiveMix, &QPushButton::clicked, this, &RCRTCMeeting::onSubLiveMixButton);
+    connect(ui->pushButton_SetLiveMix, &QPushButton::clicked, this, &RCRTCMeeting::onSetLiveMixButton);
     connect(ui->pushButton_Quit, &QPushButton::clicked, this, &RCRTCMeeting::onLeavRoom);
 
     ui->pushButton_PubStream->setEnabled(true);
     ui->pushButton_SubRemote->setEnabled(false);
+    ui->pushButton_SubCustomStream->setEnabled(false);
     ui->pushButton_PubDesktop->setEnabled(true);
     ui->pushButton_SwitchRole->setEnabled(false);
 
-    ui->pushButton_SubMix->setEnabled(false);  // todo
-    ui->pushButton_SetMix->setEnabled(false);  // todo
+    ui->pushButton_SubLiveMix->setEnabled(false);
+    ui->pushButton_SetLiveMix->setEnabled(false);
 }
 
 RCRTCMeeting::~RCRTCMeeting()
@@ -102,6 +105,11 @@ bool RCRTCMeeting::EnterRoom(rcrtc::RCRTCEngine* engine, const std::string& room
 
         if (user_role_ != rcrtc::RCRTCRole::MEETING_MEMBER) {
             ui->pushButton_SwitchRole->setEnabled(true);
+            if (user_role_ == rcrtc::RCRTCRole::LIVE_BROADCASTER) {
+                ui->pushButton_SetLiveMix->setEnabled(true);
+            } else {
+                ui->pushButton_SubLiveMix->setEnabled(true);
+            }
         }
     }
 
@@ -147,13 +155,15 @@ void RCRTCMeeting::onPublishLocalStreamButton() {
                 ui->verticalLayout->addWidget(render);
             }
         } else {
+            err_code = rcrtc_engine_->removeLocalView();
+            emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "local call removeLocalView.\n").c_str()));
+
             err_code = rcrtc_engine_->unpublish(user_select_mediaType_);
             emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "local call unpublish.\n").c_str()));
             if (err_code != 0) {
                 pub_flag = false;
             }
-            err_code = rcrtc_engine_->removeLocalView();
-            emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "local call removeLocalView.\n").c_str()));
+
             ui->pushButton_PubStream->setText("发布本地资源");
         }
     }
@@ -334,6 +344,20 @@ void RCRTCMeeting::onPubDesktopButton() {
             return;
         }
 
+//        rcrtc::RCRTCVideoConfig* video_config = rcrtc::RCRTCVideoConfig::create();
+//        int32_t maxBit;
+//        int32_t minBit;
+//        video_config->setResolution(rcrtc::RCRTCVideoResolution::RESOLUTION_720_960);
+//        video_config->setFps(rcrtc::RCRTCVideoFps::FPS_15);
+//        video_config->getMaxAndMinBitrate(&maxBit, &minBit);
+//        video_config->setMaxBitrate(maxBit);
+//        video_config->setMinBitrate(minBit);
+//        rcrtc_engine_->setCustomStreamVideoConfig(stream_tag, video_config);
+//        rcrtc::RCRTCVideoConfig::destroy(&video_config);
+
+        err_code = rcrtc_engine_->publishCustomStream(stream_tag, rcrtc::RCRTCMediaType::VIDEO);
+        emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "local call publishCustomStream.\n").c_str()));
+
         ui->pushButton_PubDesktop->setText("取消屏幕共享");
         rtc_video_render* render = new rtc_video_render(this);
         connect(render, &rtc_video_render::sigSendSdkResult, this, &RCRTCMeeting::onRecvSdkResultLog);
@@ -341,9 +365,6 @@ void RCRTCMeeting::onPubDesktopButton() {
         render->setFixedSize(400,300);
         render->attachCustomVideoRender(rcrtc_engine_, stream_tag);
         ui->verticalLayout->addWidget(render);
-
-        err_code = rcrtc_engine_->publishCustomStream(stream_tag, rcrtc::RCRTCMediaType::VIDEO);
-        emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "local call publishCustomStream.\n").c_str()));
     } else {
         err_code = rcrtc_engine_->unpublishCustomStream(stream_tag, rcrtc::RCRTCMediaType::VIDEO);
         emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "local call unpublishCustomStream.\n").c_str()));
@@ -395,4 +416,50 @@ void RCRTCMeeting::onSwitchRoleButton() {
         this->setWindowTitle(win_title);
     }
     emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "local call switchLiveRole.\n").c_str()));
+}
+
+void RCRTCMeeting::onSubLiveMixButton() {
+    static bool sub_flag = false;
+    sub_flag = !sub_flag;
+
+    int32_t err_code = -1;
+    if (rcrtc_engine_) {
+        if (sub_flag) {
+            err_code = rcrtc_engine_->subscribeLiveMix(rcrtc::RCRTCMediaType::AUDIO_VIDEO);
+            if (err_code != 0) {
+                sub_flag = false;
+                emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "local call subscribeLiveMix video_audio.\n").c_str()));
+                return;
+            }
+
+            ui->pushButton_PubStream->setText("取消订阅直播合流");
+
+            // todo
+            rtc_video_render* render = new rtc_video_render(this);
+            connect(render, &rtc_video_render::sigSendSdkResult, this, &RCRTCMeeting::onRecvSdkResultLog);
+
+            // render->setWindowTitle("223334");
+            render->setFixedSize(400,300);
+            render->attachLiveMixVideoRender(rcrtc_engine_);
+            ui->verticalLayout->addWidget(render);
+        } else {
+            err_code = rcrtc_engine_->unsubscribeLiveMix(rcrtc::RCRTCMediaType::AUDIO_VIDEO);
+            emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "local call unsubscribeLiveMix video_audio.\n").c_str()));
+            if (err_code != 0) {
+                sub_flag = false;
+            }
+            err_code = rcrtc_engine_->removeLiveMixView();
+            emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "local call removeLiveMixView.\n").c_str()));
+            ui->pushButton_PubStream->setText("订阅直播合流");
+        }
+    }
+}
+
+void RCRTCMeeting::onSetLiveMixButton() {
+    if (!rcrtc_engine_) {
+        return;
+    }
+
+    int32_t err_code = rcrtc_engine_->setLiveMixBackgroundColor(50,200,50);
+    emit sigSendSdkResult(QString(CUtils::formatSdkResult(err_code, "local call setLiveMixBackgroundColor.\n").c_str()));
 }

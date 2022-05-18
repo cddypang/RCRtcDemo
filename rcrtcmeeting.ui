@@ -58,16 +58,16 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButton_SubMix">
+      <widget class="QPushButton" name="pushButton_SubLiveMix">
        <property name="text">
-        <string>订阅合流</string>
+        <string>订阅直播合流</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButton_SetMix">
+      <widget class="QPushButton" name="pushButton_SetLiveMix">
        <property name="text">
-        <string>设置合流模式</string>
+        <string>设置直播合流</string>
        </property>
       </widget>
      </item>
