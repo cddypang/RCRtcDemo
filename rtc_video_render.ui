@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>rtc_video_render</class>
- <widget class="QWidget" name="rtc_video_render">
+ <class>RtcVideoRender</class>
+ <widget class="QWidget" name="RtcVideoRender">
   <property name="geometry">
    <rect>
     <x>0</x>

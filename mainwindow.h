@@ -9,7 +9,7 @@
 #include "rtc/rcrtc_engine.h"
 #include "rtc/rcrtc_listener.h"
 
-#include "rcrtcmeeting.h"
+#include "rtc_room_dialog.h"
 
 // context: MainWindow*
 void rcim_connection_callback_impl(HANDLE context, rc_connection_status code);
@@ -60,7 +60,7 @@ private:
     HANDLE_IM_ENGINE handle_im_;
     rcrtc::RCRTCEngineSetup* engine_setup_;
     rcrtc::RCRTCEngine* rcrtc_engine_;
-    RCRTCMeeting* rtc_dialog_;
+    RtcRoomDialog* rtc_dialog_;
     std::string user_token_; // im 连接需要 token ，所以同时只能登录一个用户
 
 private:  // im rtc callback impl

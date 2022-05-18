@@ -2,8 +2,9 @@
 #include "./ui_mainwindow.h"
 #include <QMessageBox>
 #include <QDir>
-#include "cutils.h"
 #include <iostream>
+#include "cutils.h"
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -40,13 +41,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->pushButton_Enter->setEnabled(false);
     ui->plainTextEdit->setReadOnly(true);
     ui->plainTextEdit->setLineWrapMode(QPlainTextEdit::WidgetWidth);
-
-    //todo debug
-    ui->lineEdit_AppKey->setText("x18ywvqfxyg1c");
-    //{"code":200,"userId":"host-qt-app","token":"Xab4I8wRR+q4jOxnQrCGXmXUKtIzjgOpeZpJSxiKKcEoqEfFYn7evw==@5ysv.cn.rongnav.com;5ysv.cn.rongcfg.com"}
-    ui->lineEdit_Token->setText("Xab4I8wRR+q4jOxnQrCGXmXUKtIzjgOpeZpJSxiKKcEoqEfFYn7evw==@5ysv.cn.rongnav.com;5ysv.cn.rongcfg.com");
-    ui->lineEdit_RoomID->setText("2233");
-    ui->lineEdit_UserName->setText("debug");
 }
 
 MainWindow::~MainWindow()
@@ -112,17 +106,17 @@ void MainWindow::onEnterRoomButton()
     }
     else
     {
-        rtc_dialog_ = new RCRTCMeeting();
+        rtc_dialog_ = new RtcRoomDialog();
         if (!rtc_dialog_)
         {
             std::cout << "new rcrtc_listener_impl_ failed" << std::endl;
             return;
         }
-        connect(rtc_dialog_, &RCRTCMeeting::sigSendSdkResult, this, &MainWindow::onRecvSdkResultLog);
-        connect(this, &MainWindow::remotePublished, rtc_dialog_, &RCRTCMeeting::onRemotePublished);
-        connect(this, &MainWindow::remoteUnpublished, rtc_dialog_, &RCRTCMeeting::onRemoteUnpublished);
-        connect(this, &MainWindow::remoteCustomStreamPublished, rtc_dialog_, &RCRTCMeeting::onRemoteCustomStreamPublished);
-        connect(this, &MainWindow::remoteCustomStreamUnpublished, rtc_dialog_, &RCRTCMeeting::onRemoteCustomStreamUnpublished);
+        connect(rtc_dialog_, &RtcRoomDialog::sigSendSdkResult, this, &MainWindow::onRecvSdkResultLog);
+        connect(this, &MainWindow::remotePublished, rtc_dialog_, &RtcRoomDialog::onRemotePublished);
+        connect(this, &MainWindow::remoteUnpublished, rtc_dialog_, &RtcRoomDialog::onRemoteUnpublished);
+        connect(this, &MainWindow::remoteCustomStreamPublished, rtc_dialog_, &RtcRoomDialog::onRemoteCustomStreamPublished);
+        connect(this, &MainWindow::remoteCustomStreamUnpublished, rtc_dialog_, &RtcRoomDialog::onRemoteCustomStreamUnpublished);
 
         // invoke rtc window
         rcrtc::RCRTCRole role;

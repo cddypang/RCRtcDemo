@@ -3,20 +3,20 @@
 
 #include "cutils.h"
 
-rtc_video_render::rtc_video_render(QWidget *parent) :
+RtcVideoRender::RtcVideoRender(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::rtc_video_render)
+    ui(new Ui::RtcVideoRender)
 {
     ui->setupUi(this);
 }
 
-rtc_video_render::~rtc_video_render()
+RtcVideoRender::~RtcVideoRender()
 {
     delete ui;
 }
 
 // userId emplty is local
-void rtc_video_render::attachVideoRender(rcrtc::RCRTCEngine* engine, const std::string& userId) {
+void RtcVideoRender::attachVideoRender(rcrtc::RCRTCEngine* engine, const std::string& userId) {
     if (engine) {
         rcrtc::IRCRTCView* rtc_view = nullptr;
         HANDLE viewId = nullptr;
@@ -35,7 +35,7 @@ void rtc_video_render::attachVideoRender(rcrtc::RCRTCEngine* engine, const std::
 }
 
 // userId emplty is local
-void rtc_video_render::attachCustomVideoRender(rcrtc::RCRTCEngine* engine, const std::string& tag, const std::string& userId) {
+void RtcVideoRender::attachCustomVideoRender(rcrtc::RCRTCEngine* engine, const std::string& tag, const std::string& userId) {
     if (engine && !tag.empty()) {
         rcrtc::IRCRTCView* rtc_view = nullptr;
         HANDLE viewId = nullptr;
@@ -53,7 +53,7 @@ void rtc_video_render::attachCustomVideoRender(rcrtc::RCRTCEngine* engine, const
     }
 }
 
-void rtc_video_render::attachLiveMixVideoRender(rcrtc::RCRTCEngine* engine) {
+void RtcVideoRender::attachLiveMixVideoRender(rcrtc::RCRTCEngine* engine) {
     if (engine) {
         rcrtc::IRCRTCView* rtc_view = nullptr;
         HANDLE viewId = nullptr;

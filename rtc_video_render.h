@@ -7,16 +7,16 @@
 #include "rcrtc_engine.h"
 
 namespace Ui {
-class rtc_video_render;
+class RtcVideoRender;
 }
 
-class rtc_video_render : public QWidget
+class RtcVideoRender : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit rtc_video_render(QWidget *parent = nullptr);
-    ~rtc_video_render();
+    explicit RtcVideoRender(QWidget *parent = nullptr);
+    ~RtcVideoRender();
 
     // userId emplty is local
     void attachVideoRender(rcrtc::RCRTCEngine* engine, const std::string& userId = "");
@@ -30,7 +30,7 @@ signals:
     void sigSendSdkResult(const QString&);
 
 private:
-    Ui::rtc_video_render *ui;
+    Ui::RtcVideoRender *ui;
 };
 
 #endif // RTC_VIDEO_RENDER_H

@@ -9,16 +9,16 @@
 #include "cutils.h"
 
 namespace Ui {
-class RCRTCMeeting;
+class RtcRoomDialog;
 }
 
-class RCRTCMeeting : public QWidget
+class RtcRoomDialog : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit RCRTCMeeting(QWidget *parent = nullptr);
-    ~RCRTCMeeting();
+    explicit RtcRoomDialog(QWidget *parent = nullptr);
+    ~RtcRoomDialog();
 
     // 根据实际情况设置视频参数，推荐根据分辨率获取码率范围
     bool SetDefaultVideoConfig();
@@ -55,7 +55,7 @@ signals:
     void sigSendSdkResult(const QString&);
 
 private:
-    Ui::RCRTCMeeting *ui;
+    Ui::RtcRoomDialog *ui;
 
     rcrtc::RCRTCEngine* rcrtc_engine_;
     std::string user_token_;

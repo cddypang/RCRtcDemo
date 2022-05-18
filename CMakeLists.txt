@@ -35,13 +35,13 @@ set(PROJECT_SOURCES
         mw_listener_impl.cpp
         mainwindow.h
         mainwindow.ui
-        rcrtcmeeting.h
-        rcrtcmeeting.cpp
-        rcrtcmeeting.ui
+        rtc_room_dialog.h
+        rtc_room_dialog.cpp
+        rtc_room_dialog.ui
         cutils.h
         cutils.cpp
-        rcrtc_device_manger.h
-        rcrtc_device_manger.cpp
+        rtc_device_manger.h
+        rtc_device_manger.cpp
         rtc_video_render.h
         rtc_video_render.cpp
         rtc_video_render.ui
