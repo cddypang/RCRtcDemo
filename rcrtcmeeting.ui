@@ -6,16 +6,16 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>752</width>
-    <height>499</height>
+    <width>720</width>
+    <height>540</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QHBoxLayout" name="horizontalLayout_2">
+  <layout class="QHBoxLayout" name="horizontalLayout">
    <item>
-    <layout class="QVBoxLayout" name="verticalLayout_5">
+    <layout class="QVBoxLayout" name="verticalLayout_3">
      <item>
       <spacer name="verticalSpacer_2">
        <property name="orientation">
@@ -30,76 +30,45 @@
       </spacer>
      </item>
      <item>
-      <layout class="QVBoxLayout" name="verticalLayout_3">
-       <item>
-        <widget class="QPushButton" name="pushButton_PubStream">
-         <property name="text">
-          <string>发布本地视频流</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="pushButton_SubRemote">
-         <property name="text">
-          <string>订阅远端视频流</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="pushButton_PubDesktop">
-         <property name="text">
-          <string>发布屏幕共享</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
+      <widget class="QPushButton" name="pushButton_PubStream">
+       <property name="text">
+        <string>发布本地资源</string>
+       </property>
+      </widget>
      </item>
      <item>
-      <widget class="QGroupBox" name="groupBox">
-       <property name="title">
-        <string>live</string>
+      <widget class="QPushButton" name="pushButton_SubRemote">
+       <property name="text">
+        <string>订阅远端资源</string>
        </property>
-       <layout class="QVBoxLayout" name="verticalLayout_4">
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout">
-          <item>
-           <widget class="QLabel" name="label">
-            <property name="text">
-             <string>当前角色：</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="label_userRole">
-            <property name="text">
-             <string>主播</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item>
-         <widget class="QPushButton" name="pushButton_3">
-          <property name="text">
-           <string>切换角色</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="pushButton">
-          <property name="text">
-           <string>订阅合流</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="pushButton_2">
-          <property name="text">
-           <string>设置合流模式</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButton_PubDesktop">
+       <property name="text">
+        <string>发布屏幕共享</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButton_SubMix">
+       <property name="text">
+        <string>订阅合流</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButton_SetMix">
+       <property name="text">
+        <string>设置合流模式</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButton_SwitchRole">
+       <property name="text">
+        <string>切换直播角色</string>
+       </property>
       </widget>
      </item>
      <item>
@@ -134,8 +103,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>625</width>
-        <height>483</height>
+        <width>617</width>
+        <height>524</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_2">

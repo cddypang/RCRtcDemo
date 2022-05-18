@@ -152,9 +152,13 @@ void MainWindow::onEnterRoomButton()
         }
 
         if (rtc_dialog_) {
-            // rtc_dialog_->SetRTCEngine(rcrtc_engine_, roomid);
-            rtc_dialog_->EnterRoom(rcrtc_engine_, roomid, role, join_type, media_type);
-            rtc_dialog_->show();
+            bool ret = rtc_dialog_->EnterRoom(rcrtc_engine_, roomid, role, join_type, media_type);
+            if (ret) {
+                rtc_dialog_->show();
+            } else {
+                delete rtc_dialog_;
+                rtc_dialog_ = nullptr;
+            }
         }
     }
 }

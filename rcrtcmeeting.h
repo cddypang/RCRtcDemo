@@ -35,6 +35,7 @@ public slots:
     void onPublishLocalStreamButton();
     void onSubRemoteStreamButton();
     void onPubDesktopButton();
+    void onSwitchRoleButton();
 
     void onRemotePublished(const QString& userId, qint32 mediaType);
     void onRemoteUnpublished(const QString& userId, qint32 mediaType);
