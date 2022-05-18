@@ -326,7 +326,8 @@ void RtcRoomDialog::onPubDesktopButton() {
     pub_flag = !pub_flag;
 
     //todo tag manage
-    std::string stream_tag = "default monitor";
+    // note: tag 中不能包含空格
+    std::string stream_tag = "default-monitor";
     int32_t err_code = -1;
     if (pub_flag) {
         std::list<rcrtc::RCRTCDesktopSource*> desktops;
@@ -394,6 +395,8 @@ void RtcRoomDialog::onSwitchRoleButton() {
         if (0 == err_code) {
             ui->pushButton_PubStream->setEnabled(false);
             ui->pushButton_PubDesktop->setEnabled(false);
+            ui->pushButton_SetLiveMix->setEnabled(false);
+            ui->pushButton_SubLiveMix->setEnabled(true);
         }
     }
     if (cur_role == rcrtc::RCRTCRole::LIVE_AUDIENCE) {
@@ -402,6 +405,8 @@ void RtcRoomDialog::onSwitchRoleButton() {
         if (0 == err_code) {
             ui->pushButton_PubStream->setEnabled(true);
             ui->pushButton_PubDesktop->setEnabled(true);
+            ui->pushButton_SetLiveMix->setEnabled(true);
+            ui->pushButton_SubLiveMix->setEnabled(false);
         }
     }
 
