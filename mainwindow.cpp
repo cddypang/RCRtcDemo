@@ -41,6 +41,19 @@ MainWindow::MainWindow(QWidget *parent)
     ui->pushButton_Enter->setEnabled(false);
     ui->plainTextEdit->setReadOnly(true);
     ui->plainTextEdit->setLineWrapMode(QPlainTextEdit::WidgetWidth);
+
+#ifdef QT_DEBUG
+#if 0
+    ui->lineEdit_AppKey->setText("x18ywvqfxyg1c");
+    //{"code":200,"userId":"host-qt-app","token":"Xab4I8wRR+q4jOxnQrCGXmXUKtIzjgOpeZpJSxiKKcEoqEfFYn7evw==@5ysv.cn.rongnav.com;5ysv.cn.rongcfg.com"}
+    ui->lineEdit_Token->setText("Xab4I8wRR+q4jOxnQrCGXmXUKtIzjgOpeZpJSxiKKcEoqEfFYn7evw==@5ysv.cn.rongnav.com;5ysv.cn.rongcfg.com");
+#endif
+    ui->lineEdit_AppKey->setText("8luwapkv8wuel");
+    ui->lineEdit_Token->setText("Pmd+n9ObPdp4AWmTOnLiiqXJG1ZKntdGqB/XdfTR5ng=@67sf.cn.rongnav.com;67sf.cn.rongcfg.com");
+
+    ui->lineEdit_RoomID->setText("1003");
+    ui->lineEdit_UserName->setText("test001");
+#endif
 }
 
 MainWindow::~MainWindow()

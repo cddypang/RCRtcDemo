@@ -15,13 +15,17 @@ find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 
 # find rc sdk
-include_directories("sdk/include")
-include_directories("sdk/include/im")
-include_directories("sdk/include/rtc")
+set(RTC_INCLUDE_PATH ${CMAKE_SOURCE_DIR}/../../01gitlab2/webrtc_pc)
+set(RTC_LIBS_PATH ${CMAKE_SOURCE_DIR}/../../01gitlab2/webrtc_pc/out)
+
+include_directories("${RTC_INCLUDE_PATH}/sdk/include")
+include_directories("${RTC_INCLUDE_PATH}/sdk/include/im")
+include_directories("${RTC_INCLUDE_PATH}/sdk/include/rtc")
 
 IF (CMAKE_SYSTEM_NAME MATCHES "Windows")
     IF (CMAKE_SIZEOF_VOID_P EQUAL 8)
-        link_directories("sdk/lib/win/x64")
+        #link_directories("sdk/lib/win/x64")
+        link_directories("${RTC_LIBS_PATH}/x64_debug")
         message("build on windows x64 system")
     ELSE ()
         link_directories("sdk/lib/win/x86")
@@ -72,9 +76,16 @@ endif()
 
 target_link_libraries(RCRtcDemo Qt${QT_VERSION_MAJOR}::Widgets)
 # link rc sdk
-target_link_libraries(RCRtcDemo "rongcommon.dll.lib")
-target_link_libraries(RCRtcDemo "rongim.dll.lib")
-target_link_libraries(RCRtcDemo "rongrtc.dll.lib")
+if(WIN32)
+    target_link_libraries(RCRtcDemo "rongcommon.dll.lib")
+    target_link_libraries(RCRtcDemo "rongim.dll.lib")
+    target_link_libraries(RCRtcDemo "rongrtc.dll.lib")
+elseif(APPLE)
+elseif(UNIX AND NOT APPLE)
+    target_link_libraries(RCRtcDemo "librongcommon.so")
+    target_link_libraries(RCRtcDemo "librongim.so")
+    target_link_libraries(RCRtcDemo "librongrtc.so")
+endif()
 
 set_target_properties(RCRtcDemo PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com
